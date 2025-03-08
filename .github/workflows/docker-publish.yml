@@ -1,11 +1,13 @@
-name: Build Docker image, push to GHCR, and trigger redeploy
+name: Build Docker image push to Azure Registry
 
 on:
-  push:
-    # Run whenever main branch changes
-    branches: [ "main" ]
-    # ...or whenever a new semver release tag is published
-    tags: [ 'v*.*.*' ]
+  workflow_dispatch:
+    # Allow manual trigger
+  # push:
+  #   # Run whenever main branch changes
+  #   branches: [ "main" ]
+  #   # ...or whenever a new semver release tag is published
+  #   tags: [ 'v*.*.*' ]
 
 env:
   REGISTRY: ghcr.io
@@ -21,53 +23,65 @@ jobs:
       # Set up BuildKit Docker container builder to be able to build
       # multi-platform images and export cache
       # https://github.com/docker/setup-buildx-action
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
+      # - name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@v3
+      - name: Login to Azure Container Registry 
+        uses: azure/docker-login@v1
+        with:
+          login-server:  ${{ secrets.REGISTRY_DOMAIN }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      
+      - name: Build and push Docker image
+        run: |
+          docker build \
+            --tag ${{ secrets.REGISTRY_DOMAIN }}/maproulette-fe:latest \
+            .
+          docker push ${{ secrets.REGISTRY_DOMAIN }}/maproulette-fe:latest
       # Login to Docker registry
       # https://github.com/docker/login-action
-      - name: Log into registry ${{ env.REGISTRY }}
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Log into Azure Container Registry
+      #   uses: docker/login-action@v3
+      #   with:
+      #     registry: ${{ env.REGISTRY }}
+      #     username: ${{ github.actor }}
+      #     password: ${{ secrets.GITHUB_TOKEN }}
 
       # Extract metadata (tags, labels) for Docker
       # https://github.com/docker/metadata-action
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+      # - name: Extract Docker metadata
+      #   id: meta
+      #   uses: docker/metadata-action@v5
+      #   with:
+      #     images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      #     tags: |
+      #       type=ref,event=branch
+      #       type=semver,pattern={{version}}
+      #       type=semver,pattern={{major}}.{{minor}}
+      #       type=semver,pattern={{major}}
 
       # Build and push Docker image with Buildx
       # https://github.com/docker/build-push-action
-      - name: Build and push Docker image
-        id: build-and-push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      # - name: Build and push Docker image
+      #   id: build-and-push
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: .
+      #     push: true
+      #     tags: ${{ steps.meta.outputs.tags }}
+      #     labels: ${{ steps.meta.outputs.labels }}
+      #     cache-from: type=gha
+      #     cache-to: type=gha,mode=max
 
-  trigger-redeploy:
-    needs: build
-    runs-on: ubuntu-latest
+  # trigger-redeploy:
+  #   needs: build
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Send trigger-workflow webhook to maproulette-deploy repository
-        run: |
-          curl -X POST https://api.github.com/repos/maproulette/maproulette-deploy/dispatches \
-            --fail --silent --show-error --location \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.DEPLOY_REPO_TOKEN }}" \
-            -d '{ "event_type": "deploy maproulette-frontend@${{ github.ref_name }} (${{ github.sha }})" }'
+  #   steps:
+  #     - name: Send trigger-workflow webhook to maproulette-deploy repository
+  #       run: |
+  #         curl -X POST https://api.github.com/repos/maproulette/maproulette-deploy/dispatches \
+  #           --fail --silent --show-error --location \
+  #           -H "Accept: application/vnd.github+json" \
+  #           -H "Authorization: Bearer ${{ secrets.DEPLOY_REPO_TOKEN }}" \
+  #           -d '{ "event_type": "deploy maproulette-frontend@${{ github.ref_name }} (${{ github.sha }})" }'

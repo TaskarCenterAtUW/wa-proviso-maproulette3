@@ -23,7 +23,7 @@ const apiKey = window.env.REACT_APP_SERVER_API_KEY;
 // In development mode, be less strict about CORS so that the frontend and
 // backend can run on separate servers/ports. Otherwise insist on same-origin
 // policy
-export const credentialsPolicy = process.env.NODE_ENV === "development" ? "include" : "same-origin";
+export const credentialsPolicy = "include" ; //process.env.NODE_ENV === "development" ? "include" : "same-origin";
 
 export const serverRouteFactory = new RouteFactory(baseURL);
 export const defaultRoutes = Object.freeze(apiRoutes(serverRouteFactory));
