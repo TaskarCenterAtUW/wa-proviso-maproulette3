@@ -20,28 +20,54 @@ export const CheckForToken = ({ children }) => {
 
       if (storedState === state || process.env.NODE_ENV === "development") {
         setVerifying(true);
-        callback(authCode, dispatch, push)
-          .then(() => {
-            const queryParams = new URLSearchParams(location.search);
+        // Wait for 1 second before calling the next function
+        setTimeout(() => {
+          callback(authCode, dispatch, push)
+            .then(() => {
+              const queryParams = new URLSearchParams(location.search);
 
-            if (queryParams.has("code")) {
-              queryParams.delete("code");
-              queryParams.delete("state");
-              history.replace({
-                search: queryParams.toString(),
-              });
+              if (queryParams.has("code")) {
+                queryParams.delete("code");
+                queryParams.delete("state");
+                history.replace({
+                  search: queryParams.toString(),
+                });
 
+                setVerifying(false);
+                localStorage.removeItem("state");
+              }
+            })
+            .catch(() => {
               setVerifying(false);
               localStorage.removeItem("state");
-            }
-          })
-          .catch(() => {
-            setVerifying(false);
-            localStorage.removeItem("state");
-          });
+            });
+        }, 1000);
       } else {
         localStorage.removeItem("state");
       }
+
+      //   callback(authCode, dispatch, push)
+      //     .then(() => {
+      //       const queryParams = new URLSearchParams(location.search);
+
+      //       if (queryParams.has("code")) {
+      //         queryParams.delete("code");
+      //         queryParams.delete("state");
+      //         history.replace({
+      //           search: queryParams.toString(),
+      //         });
+
+      //         setVerifying(false);
+      //         localStorage.removeItem("state");
+      //       }
+      //     })
+      //     .catch(() => {
+      //       setVerifying(false);
+      //       localStorage.removeItem("state");
+      //     });
+      // } else {
+      //   localStorage.removeItem("state");
+      // }
 
       return;
     } else {
