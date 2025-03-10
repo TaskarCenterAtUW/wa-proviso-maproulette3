@@ -55,7 +55,7 @@ const RapidEditor = ({ token, task, mapBounds, comment }) => {
     return cleanup;
   }, []);
 
-  if (window.env.REACT_APP_OSM_API_SERVER === "https://api.openstreetmap.org") {
+  // if (window.env.REACT_APP_OSM_API_SERVER === "https://api.openstreetmap.org") {
     // Only pass auth token to Rapid if it's for the production OSM API (not the dev API)
     // since Rapid assumes any token it's given is valid on api.openstreetmap.org.
     // See: https://github.com/facebook/Rapid/issues/1341
@@ -63,7 +63,7 @@ const RapidEditor = ({ token, task, mapBounds, comment }) => {
     // NOTE: the assumption here is that REACT_APP_OSM_API_SERVER is the same as
     // the maproulette-backend's config.osm.server; fix your configs if they differ!
     initialHash += `&token=${token}`;
-  }
+  // }
 
   const handleResetHash = () => {
     if (iframeRef.current) {
